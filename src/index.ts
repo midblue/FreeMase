@@ -56,7 +56,7 @@ export default class FreeMase {
     this.setup()
   }
 
-  async setup() {
+  private async setup() {
     const giveUpLimit = 100
     let giveUp = 0
     while (!this.parentEl || !this.window) {
