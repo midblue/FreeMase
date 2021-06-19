@@ -2,12 +2,18 @@
 
 #### A lightweight and fast masonry layout generator that supports fully variable element sizes.
 
+- Tightly packs HTML elements of any size and shape
 - Zero dependencies
 - Written in Typescript
-- Supports elements of any size
-- Automatically updates on element additions, removals, or resizes
+- Automatically updates on element addition, removal, or resize
 
 ![Example](https://raw.githubusercontent.com/midblue/FreeMase/main/1.png)
+
+### Install
+
+```bash
+npm install freemase
+```
 
 ### Simple Usage
 
