@@ -18,7 +18,7 @@ npm install freemase
 ### Simple Usage
 
 ```js
-import { FreeMase } from '../../common/src/FreeMase/FreeMase'
+import FreeMase from 'freemase'
 const parentElement = document.queryElementById('parent')
 const fm = new FreeMase(parentElement)
 ```
@@ -31,7 +31,7 @@ const options = {
   verbose: false, // Show debugging logs. Default: false.
 }
 
-import { FreeMase } from '../../common/src/FreeMase/FreeMase'
+import FreeMase from 'freemase'
 const parentElement = document.queryElementById('parent')
 const fm = new FreeMase(parentElement, options)
 ```
