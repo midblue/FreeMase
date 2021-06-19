@@ -1,0 +1,21 @@
+{
+  "name": "freemase",
+  "version": "1.0.0",
+  "description": "A lightweight and fast masonry library that supports fully variable element sizes.",
+  "main": "/dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "asdf"
+  },
+  "keywords": [
+    "masonry",
+    "layout",
+    "html",
+    "typescript"
+  ],
+  "author": "Jasper Stephenson",
+  "license": "ISC"
+}
