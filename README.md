@@ -7,6 +7,8 @@
 - Supports elements of any size
 - Automatically updates on element additions, removals, or resizes
 
+![Example](https://raw.githubusercontent.com/midblue/FreeMase/main/1.png)
+
 ### Simple Usage
 
 ```js
