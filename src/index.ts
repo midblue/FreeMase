@@ -36,7 +36,7 @@ export default class FreeMase {
       return
     }
     if (!window) {
-      this.options.verbose &&
+      this.options?.verbose &&
         console.error(
           `FreeMase can only run in a browser (window object not found).`,
         )
@@ -62,7 +62,7 @@ export default class FreeMase {
     while (!this.parentEl || !this.window) {
       await sleep(100)
       if (++giveUp > giveUpLimit) {
-        this.options.verbose &&
+        this.options?.verbose &&
           console.error(`FreeMase:`, `Failed to initialize`)
         return
       }
@@ -80,16 +80,20 @@ export default class FreeMase {
           els.forEach((entry) => {
             const parentEl = entry.target as Element
             if (!parentEl) return
-            this.options.verbose &&
+            this.options?.verbose &&
               console.log(`FreeMase:`, `mutated`, parentEl)
             for (let childEl of Array.from(
               parentEl.children,
             )) {
-              if (this.watchingForResize.includes(childEl))
+              if (
+                this.watchingForResize.find(
+                  (el) => el === childEl,
+                )
+              )
                 return
               if (this.resizeObserver)
                 this.resizeObserver.observe(childEl)
-              this.options.verbose &&
+              this.options?.verbose &&
                 console.log(
                   `FreeMase:`,
                   `now watching for resize:`,
@@ -105,7 +109,7 @@ export default class FreeMase {
 
     const resizeCallback = debounce(
       (els?: ResizeObserverEntry[]) => {
-        this.options.verbose &&
+        this.options?.verbose &&
           console.log('FreeMase:', 'resized', els)
         if (!ready) return
         this.position()
@@ -122,7 +126,7 @@ export default class FreeMase {
 
     this.resizeObserver = new ResizeObserver(resizeCallback)
     for (let child of Array.from(this.parentEl.children)) {
-      this.options.verbose &&
+      this.options?.verbose &&
         console.log(
           `FreeMase:`,
           `now watching for resize:`,
@@ -425,7 +429,7 @@ export default class FreeMase {
     placeFrames(frames)
 
     const elapsedTime = Date.now() - startTime
-    this.options.verbose &&
+    this.options?.verbose &&
       console.log(
         `FreeMase:`,
         `elapsed time: ${elapsedTime}`,
@@ -436,7 +440,7 @@ export default class FreeMase {
 }
 
 function debounce(fn: Function, time = 500) {
-  let timeout
+  let timeout: any
   return (...params: any[]) => {
     if (timeout) clearTimeout(timeout)
     timeout = setTimeout(() => {
