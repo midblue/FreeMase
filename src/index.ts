@@ -89,7 +89,9 @@ export default class FreeMase {
             // handle added elements
             for (let addedElement of [
               ...entry.addedNodes,
-            ].filter((n) => n.ELEMENT_NODE) as Element[]) {
+            ].filter(
+              (n) => n.nodeType === 1,
+            ) as Element[]) {
               if (this.watchingForResize.has(addedElement))
                 return
               if (this.resizeObserver)
@@ -106,7 +108,9 @@ export default class FreeMase {
             // handle removed elements
             for (let removedElement of [
               ...entry.removedNodes,
-            ].filter((n) => n.ELEMENT_NODE) as Element[]) {
+            ].filter(
+              (n) => n.nodeType === 1,
+            ) as Element[]) {
               if (
                 !this.watchingForResize.has(removedElement)
               )
