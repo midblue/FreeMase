@@ -2,7 +2,7 @@ import { FreeMaseRect as Rect } from './Rect'
 
 interface FreeMaseOptions {
   centerX?: boolean
-  verbose?: false
+  verbose?: boolean
 }
 
 interface FramePlacementData {
@@ -19,7 +19,7 @@ export default class FreeMase {
 
   private resizeObserver: ResizeObserver | null = null
   private mutationObserver: MutationObserver | null = null
-  private watchingForResize: Element[] = []
+  private watchingForResize: Set<Element> = new Set()
 
   constructor(
     parentEl: HTMLElement,
@@ -36,7 +36,7 @@ export default class FreeMase {
       return
     }
     if (!window) {
-      this.options?.verbose &&
+      if (this.options?.verbose)
         console.error(
           `FreeMase can only run in a browser (window object not found).`,
         )
@@ -62,7 +62,7 @@ export default class FreeMase {
     while (!this.parentEl || !this.window) {
       await sleep(100)
       if (++giveUp > giveUpLimit) {
-        this.options?.verbose &&
+        if (this.options?.verbose)
           console.error(`FreeMase:`, `Failed to initialize`)
         return
       }
@@ -80,26 +80,49 @@ export default class FreeMase {
           els.forEach((entry) => {
             const parentEl = entry.target as Element
             if (!parentEl) return
-            this.options?.verbose &&
-              console.log(`FreeMase:`, `mutated`, parentEl)
-            for (let childEl of Array.from(
-              parentEl.children,
-            )) {
-              if (
-                this.watchingForResize.find(
-                  (el) => el === childEl,
-                )
+            if (this.options?.verbose)
+              console.log(
+                `FreeMase:`,
+                `base element mutated`,
               )
+
+            // handle added elements
+            for (let addedElement of [
+              ...entry.addedNodes,
+            ].filter((n) => n.ELEMENT_NODE) as Element[]) {
+              if (this.watchingForResize.has(addedElement))
                 return
               if (this.resizeObserver)
-                this.resizeObserver.observe(childEl)
-              this.options?.verbose &&
+                this.resizeObserver.observe(addedElement)
+              if (this.options?.verbose)
                 console.log(
                   `FreeMase:`,
                   `now watching for resize:`,
-                  childEl,
+                  addedElement,
                 )
-              this.watchingForResize.push(childEl)
+              this.watchingForResize.add(addedElement)
+            }
+
+            // handle removed elements
+            for (let removedElement of [
+              ...entry.removedNodes,
+            ].filter((n) => n.ELEMENT_NODE) as Element[]) {
+              if (
+                !this.watchingForResize.has(removedElement)
+              )
+                return
+              if (this.resizeObserver)
+                this.resizeObserver.unobserve(
+                  removedElement,
+                )
+              if (this.options?.verbose)
+                console.log(
+                  `FreeMase:`,
+                  `stopped watching for resize:`,
+                  removedElement,
+                )
+
+              this.watchingForResize.delete(removedElement)
             }
           })
         this.position()
@@ -109,8 +132,8 @@ export default class FreeMase {
 
     const resizeCallback = debounce(
       (els?: ResizeObserverEntry[]) => {
-        this.options?.verbose &&
-          console.log('FreeMase:', 'resized', els)
+        if (this.options?.verbose)
+          console.log(`FreeMase:`, `resized`, els)
         if (!ready) return
         this.position()
       },
@@ -126,14 +149,14 @@ export default class FreeMase {
 
     this.resizeObserver = new ResizeObserver(resizeCallback)
     for (let child of Array.from(this.parentEl.children)) {
-      this.options?.verbose &&
+      if (this.options?.verbose)
         console.log(
           `FreeMase:`,
           `now watching for resize:`,
           child,
         )
       this.resizeObserver.observe(child)
-      this.watchingForResize.push(child)
+      this.watchingForResize.add(child)
     }
     ready = true
     this.position()
@@ -233,7 +256,7 @@ export default class FreeMase {
 
       while (!doneAddingNewAvailableSpaces) {
         let aligned: Rect[] = []
-        // find all that hit one horizontal line
+        // raycast horizontally: find all rects that hit one horizontal line
         for (let takenRect of takenSpaces) {
           const verticallyAligned =
             searchTop >= takenRect.top &&
@@ -241,7 +264,7 @@ export default class FreeMase {
           if (verticallyAligned) aligned.push(takenRect)
         }
 
-        // if nothing found, end
+        // if nothing found, skip to next horizontal line
         if (!aligned.length) {
           doneAddingNewAvailableSpaces = true
           continue
@@ -324,6 +347,7 @@ export default class FreeMase {
         for (let { left, right } of foundSpans) {
           let top = searchTop
           let bottom = this.maxHeight
+          let rectBelow: Rect | undefined
           for (let takenRect of takenSpaces) {
             if (
               takenRect.left >= right ||
@@ -331,14 +355,51 @@ export default class FreeMase {
             )
               continue
             if (takenRect.bottom <= top) continue
-            if (takenRect.top < bottom)
+            if (takenRect.top < bottom) {
               bottom = takenRect.top
+              rectBelow = takenRect
+            }
           }
           // add the available space rect
           if (bottom !== top)
             availableSpaces.push(
               new Rect({ top, bottom, left, right }),
             )
+
+          // if we hit another box, there's a chance that we can find more gaps
+          while (rectBelow) {
+            // check from the right edge of the previously hit lower box
+            const newLeft = rectBelow.right
+            let newBottom = this.maxHeight
+
+            rectBelow = undefined
+
+            // if the right edge of the lower box is beyond our rightmost limit, we're already done
+            if (newLeft > right) continue
+
+            for (let takenRect of takenSpaces) {
+              if (
+                takenRect.left >= right ||
+                takenRect.right <= newLeft
+              )
+                continue
+              if (takenRect.bottom <= top) continue
+              if (takenRect.top < newBottom) {
+                newBottom = takenRect.top
+                rectBelow = takenRect
+              }
+            }
+            // add the new available space we've found
+            if (newBottom !== top)
+              availableSpaces.push(
+                new Rect({
+                  top,
+                  bottom: newBottom,
+                  left: newLeft,
+                  right,
+                }),
+              )
+          }
         }
 
         // get new search starting horizontal line
@@ -429,7 +490,7 @@ export default class FreeMase {
     placeFrames(frames)
 
     const elapsedTime = Date.now() - startTime
-    this.options?.verbose &&
+    if (this.options?.verbose)
       console.log(
         `FreeMase:`,
         `elapsed time: ${elapsedTime}`,
