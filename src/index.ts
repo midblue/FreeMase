@@ -86,6 +86,24 @@ export default class FreeMase {
                 `base element mutated`,
               )
 
+            // handle initial elements
+            for (let el of [
+              ...entry.target.childNodes,
+            ].filter(
+              (n) => n.nodeType === 1,
+            ) as Element[]) {
+              if (this.watchingForResize.has(el)) return
+              if (this.resizeObserver)
+                this.resizeObserver.observe(el)
+              if (this.options?.verbose)
+                console.log(
+                  `FreeMase:`,
+                  `now watching for resize:`,
+                  el,
+                )
+              this.watchingForResize.add(el)
+            }
+
             // handle added elements
             for (let addedElement of [
               ...entry.addedNodes,
